@@ -32,6 +32,18 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
 
+/**
+ * 主要提供了如下几项能力：
+ *
+ * 缓存当前 ZookeeperClient 实例创建的持久 ZNode 节点；
+ *
+ * 管理当前 ZookeeperClient 实例添加的各类监听器；
+ *
+ * 管理当前 ZookeeperClient 的运行状态。
+ *
+ * @param <TargetDataListener>
+ * @param <TargetChildListener>
+ */
 public abstract class AbstractZookeeperClient<TargetDataListener, TargetChildListener> implements ZookeeperClient {
 
     protected static final Logger logger = LoggerFactory.getLogger(AbstractZookeeperClient.class);
@@ -48,7 +60,10 @@ public abstract class AbstractZookeeperClient<TargetDataListener, TargetChildLis
     private final ConcurrentMap<String, ConcurrentMap<DataListener, TargetDataListener>> listeners = new ConcurrentHashMap<String, ConcurrentMap<DataListener, TargetDataListener>>();
 
     private volatile boolean closed = false;
-
+    /**
+     * 它缓存了当前 ZookeeperClient 创建的持久 ZNode 节点路径，在创建 ZNode 节点之前，会先查这个缓存，
+     * 而不是与 Zookeeper 交互来判断持久 ZNode 节点是否存在，这就减少了一次与 Zookeeper 的交互。
+     */
     private final Set<String>  persistentExistNodePath = new ConcurrentHashSet<>();
 
     public AbstractZookeeperClient(URL url) {

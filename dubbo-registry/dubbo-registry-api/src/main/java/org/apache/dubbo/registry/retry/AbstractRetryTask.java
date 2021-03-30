@@ -98,14 +98,23 @@ public abstract class AbstractRetryTask implements TimerTask {
             throw new IllegalArgumentException();
         }
 
-        Timer timer = timeout.timer();
+        Timer timer = timeout.timer(); // 检查定时任务
         if (timer.isStop() || timeout.isCancelled() || isCancel()) {
             return;
         }
-        times++;
+        times++; // 递增times
+        // 添加定时任务
         timer.newTimeout(timeout.task(), tick, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * AbstractRetryTask 中维护了当前任务关联的 URL、当前重试的次数等信息，
+     * 在其 run() 方法中，会根据重试 URL 中指定的重试次数（retry.times 参数，默认值为 3）、
+     * 任务是否被取消以及时间轮的状态，决定此次任务的 doRetry() 方法是否正常执行。
+     *
+     * @param timeout a handle which is associated with this task
+     * @throws Exception
+     */
     @Override
     public void run(Timeout timeout) throws Exception {
         if (timeout.isCancelled() || timeout.timer().isStop() || isCancel()) {
@@ -113,7 +122,7 @@ public abstract class AbstractRetryTask implements TimerTask {
             return;
         }
         if (times > retryTimes) {
-            // reach the most times of retry.
+            // reach the most times of retry. // 检查重试次数
             logger.warn("Final failed to execute task " + taskName + ", url: " + url + ", retry " + retryTimes + " times.");
             return;
         }
@@ -121,11 +130,11 @@ public abstract class AbstractRetryTask implements TimerTask {
             logger.info(taskName + " : " + url);
         }
         try {
-            doRetry(url, registry, timeout);
+            doRetry(url, registry, timeout); // 执行重试
         } catch (Throwable t) { // Ignore all the exceptions and wait for the next retry
             logger.warn("Failed to execute task " + taskName + ", url: " + url + ", waiting for again, cause:" + t.getMessage(), t);
             // reput this task when catch exception.
-            reput(timeout, retryPeriod);
+            reput(timeout, retryPeriod); // 重新添加定时任务，等待重试
         }
     }
 
